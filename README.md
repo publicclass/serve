@@ -34,6 +34,12 @@ To deploy@server:bogey.git
 
 ```
 
+## TODO
+  
+* Need to get the apps up and running again after system reboot.
+* Allow for other systems. Ex. instead of `upstart` we could use `svcs` or `init.d`.
+* I'm sure there is a million improvements that could be made. 
+
 
 ## License 
 
