@@ -1,4 +1,0 @@
-deploy     ALL=NOPASSWD: /sbin/restart node *
-deploy     ALL=NOPASSWD: /sbin/stop node *
-deploy     ALL=NOPASSWD: /sbin/start node *
-deploy     ALL=NOPASSWD: /usr/sbin/service nginx reload
