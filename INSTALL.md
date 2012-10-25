@@ -23,12 +23,12 @@ It has been developed on a Linode 512 VPS loaded with Ubuntu 12.04 LTS.
 
 ## Install serve commands
 
-    deploy> git clone https://github.com/publicclass/serve.git \
+    deploy> git clone https://github.com/publicclass/serve.git local \
         && chmod +x local/bin/*
 
 ## Prepare for N
     
-    deploy> mkdir -p /var/app/local/{lib,include}
+    deploy> mkdir -p local/{lib,include}
 
 
 ## Configure Ubuntu 12.04 LTS
