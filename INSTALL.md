@@ -1,4 +1,4 @@
-How to set up a server for `serve`
+How to prepare a server for `serve`
 ==================================
 
 This is a step-by-step guide on how to prepare a server to use the scripts in this repository for managing a node service with ease.
