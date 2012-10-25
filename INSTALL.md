@@ -22,16 +22,14 @@ It has been developed on a Linode 512 VPS loaded with Ubuntu 12.04 LTS.
     
     root> adduser --home /var/app deploy
 
-## Prepare for N
-    
-    deploy> mkdir -p /var/app/local/{bin,lib,include}
-
 ## Install serve commands
 
-    deploy> curl -s https://gist.github.com/gists/e5496019d4da5a7168a7/download \
-        | tar -xz --strip-components=1 -C /var/app/local/bin \
-        && chmod +x /var/app/local/bin/*
+    deploy> git clone https://github.com/publicclass/serve.git \
+        && chmod +x local/bin/*
 
+## Prepare for N
+    
+    deploy> mkdir -p /var/app/local/{lib,include}
 
 
 ## Configure Ubuntu 12.04 LTS
