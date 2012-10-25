@@ -1,0 +1,160 @@
+#!/bin/bash
+
+N=`which n`
+N_PREFIX="$HOME/local"
+DEPLOY="$N_PREFIX/bin/deploy"
+
+#
+# oldrev=$1
+# newrev=$2
+# refname=$3
+#
+main ()
+{ 
+  export APP=`basename $PWD .git`
+  export REF=`git rev-parse --short $2 2> /dev/null` 
+  export LOG="/tmp/post-receive-$APP.log"
+
+  test $APP || abort no app found at $PWD
+  test $REF || abort invalid revision $2
+
+  echo "" > $LOG # clear the LOG
+
+  checkout
+  install_node
+  create_shims
+  install_modules
+  build_archive
+  deploy
+}
+
+abort ()
+{
+  echo
+  echo " !     $@" 1>&2
+  echo
+  cleanup
+  exit 1;
+}
+
+cleanup ()
+{
+  test -d $APP_WORK_DIR && rm -Rf $APP_WORK_DIR
+}
+
+indent() 
+{
+  c='s/^/       /'
+  case $(uname) in
+    Darwin) sed -l "$c";;
+    *)      sed -u "$c";;
+  esac
+}
+
+checkout ()
+{
+  export APP_WORK_DIR=`mktemp -d` || abort "Could not create temp dir"
+  git clone -q . $APP_WORK_DIR    || abort "Could not git clone into $APP_WORK_DIR"
+  cd $APP_WORK_DIR
+  env -i git reset -q --hard $REF || abort "Could not check out revision $REF"
+}
+
+
+# Takes a list of versions, strips all but the version numbers,
+# removes newlines and then append "-v " infront of each version. 
+# TODO optimize the versions to a <0.0.x || <0.1.6 etc
+node_versions ()
+{
+  N_PREFIX=$N_PREFIX $N ls \
+    | egrep -o '[0-9]+\.[0-9]+\.[0-9]+' \
+    | tr '\n' ' ' \
+    | sed 's/[0-9]+\.[0-9]+\.[0-9]+/-v &/g'
+}
+
+latest_version ()
+{
+  node_versions \
+    | xargs semver -r "`node_version`" \
+    | tail -n1
+}
+
+node_version ()
+{
+  cat .node_version 2> /dev/null \
+    || node -p -e 'require("./package.json").engines.node' 2> /dev/null \
+    || abort could not find node version
+}
+
+install_node ()
+{
+  export NODE_VERSION=`latest_version`
+  echo "-----> Installing node $NODE_VERSION"
+
+  mkdir -p $N_PREFIX/bin $N_PREFIX/lib $N_PREFIX/include &> /dev/null
+  N_PREFIX=$N_PREFIX $N $NODE_VERSION > $LOG \
+    || abort "Could not install node $NODE_VERSION"
+}
+
+# path=$1
+# content=$2
+create_shim ()
+{
+  touch $1 || abort "Could not create shim $1"
+  echo '#!/bin/bash' > $1
+  echo $2 >> $1
+  chmod +x $1
+}
+
+create_shims ()
+{
+  mkdir bin || abort "Could not create bin dir"
+  create_shim bin/node  "N_PREFIX=$N_PREFIX $N use $NODE_VERSION \$@"
+  create_shim bin/npm   "N_PREFIX=$N_PREFIX $N npm $NODE_VERSION \$@"
+}
+
+install_modules ()
+{
+  export NPM_VERSION=`bin/npm -v` || abort "Failed to run npm (is node older than 0.6.12?)"
+  echo "-----> Installing dependencies with npm $NPM_VERSION"
+
+  GIT_DIR=".git" bin/npm install --production &> $LOG | indent
+
+  if [ "${PIPESTATUS[*]}" != "0 0" ]; then
+    abort "Failed to install dependencies with npm: " \
+          "`echo; echo; cat $LOG | indent`"
+  else
+    echo "       Dependencies installed"
+  fi
+}
+
+build_archive ()
+{
+  echo "-----> Building archive"
+  test $APP || abort cannot build archive without app
+  test $REF || abort cannot build archive without ref
+  mkdir /var/app/$APP 2> $LOG
+  tar -czf /var/app/$APP/$REF.tar.gz --exclude ".git*" . > $LOG \
+    || abort Could not build archive
+}
+
+deploy ()
+{
+  echo "-----> Deploying $APP ($REF)"
+  $DEPLOY $APP $REF \
+    || abort Failed to deploy
+}
+
+#DEBUG=1
+test $DEBUG && set -x
+
+#
+# when being an update-hook
+# the arguments are $refname $oldrev $newrev
+#
+if [ -n "$1" -a -n "$2" -a -n "$3" ]; then
+  main $2 $3 $1 
+else
+  while read oldrev newrev refname; do
+    main $oldrev $newrev $refname
+  done
+fi

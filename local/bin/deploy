@@ -1,0 +1,137 @@
+#!/bin/bash
+
+main ()
+{
+  APP=$1;
+  REF=$2;
+  APP_DIR="$HOME/$APP"
+  REF_DIR="$APP_DIR/$REF"
+  PORT=`next_port 5000`
+  LOG="/tmp/deploy-$APP.log"
+
+  test $APP  || abort missing app $APP
+  test $REF  || abort missing ref $REF
+  test $PORT || abort could not find an available port
+
+  if [[ "$REDEPLOY" == "1" ]]; then
+    echo "       (redeploying)"
+    test -d $REF_DIR || abort not previously deployed
+    start_server
+    test_server
+    reroute
+  else
+    extract_archive
+    start_server
+    test_server
+    reroute
+  fi
+}
+
+abort ()
+{
+  echo
+  echo " !     $@" 1>&2
+  echo
+  test $REDEPLOY || cleanup
+  exit 1;
+}
+
+cleanup ()
+{
+  test -d $REF_DIR && rm -Rf $REF_DIR
+  test $STARTED && stop_server
+}
+
+indent() 
+{
+  c='s/^/       /'
+  case $(uname) in
+    Darwin) sed -l "$c";;
+    *)      sed -u "$c";;
+  esac
+}
+
+next_port ()
+{
+  from="$1"
+  for port in $(seq $from 65000); do 
+    echo -ne "\035" | nc 127.0.0.1 $port > /dev/null
+    [ $? -eq 1 ] && echo "$port" && break; 
+  done
+}
+
+extract_archive ()
+{
+  mkdir $REF_DIR || abort could not create dir $REF_DIR
+  tar -xzf $REF_DIR.tar.gz -C $REF_DIR \
+    || abort "Could not extract archive $REF_DIR.tar.gz to $REF_DIR"
+}
+
+start_server ()
+{
+  sudo /sbin/start node NAME=$APP REF=$REF PORT=$PORT 2>&1 > $LOG \
+    || abort "Could not start app at $REF_DIR"
+  STARTED=1
+}
+
+stop_server ()
+{
+  sudo /sbin/stop node NAME=$APP REF=$REF &> $LOG \
+    || abort "Could not stop app at $REF_DIR"
+}
+
+test_server ()
+{
+  sleep 5 # give it some time to start first
+  curl -s localhost:$PORT &> $LOG \
+    || abort "Server not responding. `cat "$REF_DIR.log"`"
+}
+
+#
+# Reroutes an app. 
+#
+# Writes a `server.conf` nginx config file that will proxy all
+# requests on `$HOSTNAMES` to `$PORT`. And then reloads the 
+# nginx config.
+#
+# It also keeps track of all the instances of the app in 
+# `$APP_DIR/.current` and kills the previous instances after
+# nginx rerouting has updated.
+#
+reroute ()
+{
+  # if hostnames are defined, reroute and restart the router  
+  if [[ -s "$APP_DIR/.domains" ]]; then
+    # read domains and strip newlines
+    HOSTNAMES=`cat "$APP_DIR/.domains" | tr '\n' ' '`
+
+    # write a new server.conf for the app
+    cat "$HOME/local/skel/server.conf" \
+      | sed "s/{hostnames}/$HOSTNAMES/g" \
+      | sed "s/{port}/$PORT/g" \
+      > "$APP_DIR/server.conf"
+
+    # reload the router
+    sudo /usr/sbin/service nginx reload > $LOG
+  fi
+
+  if [[ "$REDEPLOY" != "1" ]]; then
+    # stop any previous apps in .current (should never be more than one)
+    for ref in `cat "$APP_DIR/.current"`; do
+      sudo /sbin/stop node NAME=$APP REF=$ref &> $LOG
+    done
+
+    # lastly add this app to .current
+    echo "$REF" > "$APP_DIR/.current"
+
+    # done!
+    echo "       Successfully deployed on port $PORT"
+  else
+    echo "       Successfully redeployed on port $PORT"
+  fi
+}
+
+#DEBUG=1
+test $DEBUG && set -x
+
+main $1 $2
