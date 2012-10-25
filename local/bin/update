@@ -153,6 +153,11 @@ test $DEBUG && set -x
 #
 if [ -n "$1" -a -n "$2" -a -n "$3" ]; then
   main $2 $3 $1 
+
+#
+# while using a post-receive-hook
+# the options are passed using stdin
+#
 else
   while read oldrev newrev refname; do
     main $oldrev $newrev $refname
