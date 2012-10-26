@@ -37,7 +37,7 @@ It has been developed on a Linode 512 VPS loaded with Ubuntu 12.04 LTS.
 
 Copy it into `/etc/sudoers.d/` (linking does not work?):
 
-    root> cp /var/app/local/sudoers.d-node /etc/sudoers.d/node
+    root> cp /var/app/local/etc/sudoers.d/node /etc/sudoers.d/node
     root> chmod 0440 /etc/sudoers.d/node
 
 ### Configure SSH 
@@ -60,5 +60,5 @@ Add this line to `/etc/nginx/nginx.conf`:
 
 Link it to upstart:
 
-    root> ln -s /var/app/local/node.conf /etc/init/node.conf
+    root> ln -s /var/app/local/etc/node.conf /etc/init/node.conf
 
