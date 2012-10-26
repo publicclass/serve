@@ -106,7 +106,7 @@ reroute ()
     HOSTNAMES=`cat "$APP_DIR/.domains" | tr '\n' ' '`
 
     # write a new server.conf for the app
-    cat "$HOME/local/skel/server.conf" \
+    cat "$HOME/local/etc/skel/server.conf" \
       | sed "s/{hostnames}/$HOSTNAMES/g" \
       | sed "s/{port}/$PORT/g" \
       > "$APP_DIR/server.conf"
