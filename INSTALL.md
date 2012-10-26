@@ -28,13 +28,6 @@ It has been developed on a Linode 512 VPS loaded with Ubuntu 12.04 LTS.
 
 ## Configure Ubuntu 12.04 LTS
 
-### A sudoers file for restarting node services
-
-Copy it into `/etc/sudoers.d/` (linking does not work?):
-
-    root> cp /var/app/local/etc/sudoers.d/node /etc/sudoers.d/node
-    root> chmod 0440 /etc/sudoers.d/node
-
 ### Configure SSH 
 
 Don't forget to upload SSH key first.
@@ -43,7 +36,15 @@ Don't forget to upload SSH key first.
     PasswordAuthentication no
     AllowAgentForwarding yes
 
-### An nginx app conf
+
+### A sudoers file for restarting node services
+
+Copy it into `/etc/sudoers.d/` (linking does not work?):
+
+    root> cp /var/app/local/etc/sudoers.d/node /etc/sudoers.d/node
+    root> chmod 0440 /etc/sudoers.d/node
+
+### Update nginx app conf
 
 Add this line to `/etc/nginx/nginx.conf`:
 
@@ -55,5 +56,5 @@ Add this line to `/etc/nginx/nginx.conf`:
 
 Link it to upstart:
 
-    root> ln -s /var/app/local/etc/node.conf /etc/init/node.conf
+    root> ln -s /var/app/local/etc/init/node.conf /etc/init/node.conf
 
