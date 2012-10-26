@@ -2,3 +2,4 @@ bin/node
 bin/node-waf
 bin/npm
 n/
+include/node/
