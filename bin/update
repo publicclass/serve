@@ -135,6 +135,8 @@ build_archive ()
   mkdir /var/app/$APP 2> $LOG
   tar -czf /var/app/$APP/$REF.tar.gz --exclude ".git*" . > $LOG \
     || abort Could not build archive
+  SIZE=`du -h /var/app/$APP/$REF.tar.gz | cut -d "  " -f 1`
+  echo "       Archive size: $SIZE"
 }
 
 deploy ()
