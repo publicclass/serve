@@ -34,11 +34,19 @@ To deploy@server:bogey.git
 
 ```
 
+A tip - create a little shell script for quick access to your app:
+
+```
+#!/bin/bash
+ssh deploy@server serve bogey $@
+```
+
 ## TODO
   
 * Need to get the apps up and running again after system reboot.
 * Allow for other systems. Ex. instead of `upstart` we could use `svcs` or `init.d`.
 * I'm sure there is a million improvements that could be made. 
+* Branches. Ex. `git push deploy master:staging` and `ssh deploy@server bogey:staging domains:add staging.bogey.com`
 
 
 ## License 
