@@ -13,6 +13,10 @@ main ()
   test $REF  || abort missing ref $REF
   test $PORT || abort could not find an available port
 
+  echo >> $LOG
+  echo `date` >> $LOG
+  echo "Deploying $REF on #$PORT" >> $LOG
+
   if [[ "$REDEPLOY" == "1" ]]; then
     echo "       (redeploying)"
     test -d $REF_DIR || abort not previously deployed
@@ -65,6 +69,7 @@ next_port ()
 
 extract_archive ()
 {
+  echo "extract_archive" >> $LOG
   mkdir $REF_DIR || abort could not create dir $REF_DIR
   tar -xzf $REF_DIR.tar.gz -C $REF_DIR \
     || abort "Could not extract archive $REF_DIR.tar.gz to $REF_DIR"
@@ -72,6 +77,7 @@ extract_archive ()
 
 start_server ()
 {
+  echo "start_server" >> $LOG
   sudo /sbin/start node NAME=$APP REF=$REF PORT=$PORT 2>&1 >> $LOG \
     || abort "Could not start app at $REF_DIR"
   STARTED=1
@@ -79,12 +85,14 @@ start_server ()
 
 stop_server ()
 {
+  echo "stop_server" >> $LOG
   sudo /sbin/stop node NAME=$APP REF=$REF 2>&1 >> $LOG \
     || abort "Could not stop app at $REF_DIR"
 }
 
 test_server ()
 {
+  echo "test_server" >> $LOG
   sleep 5 # give it some time to start first
   curl -s localhost:$PORT 2>&1 >> $LOG \
     || abort "Server not responding. `cat "$REF_DIR.log"`"
@@ -103,6 +111,7 @@ test_server ()
 #
 reroute ()
 {
+  echo "reroute" >> $LOG
   # if hostnames are defined, reroute and restart the router  
   if [[ -s "$APP_DIR/.domains" ]]; then
     # read domains and strip newlines
