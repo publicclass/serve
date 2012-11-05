@@ -72,21 +72,21 @@ extract_archive ()
 
 start_server ()
 {
-  sudo /sbin/start node NAME=$APP REF=$REF PORT=$PORT 2>&1 > $LOG \
+  sudo /sbin/start node NAME=$APP REF=$REF PORT=$PORT 2>&1 >> $LOG \
     || abort "Could not start app at $REF_DIR"
   STARTED=1
 }
 
 stop_server ()
 {
-  sudo /sbin/stop node NAME=$APP REF=$REF &> $LOG \
+  sudo /sbin/stop node NAME=$APP REF=$REF 2>&1 >> $LOG \
     || abort "Could not stop app at $REF_DIR"
 }
 
 test_server ()
 {
   sleep 5 # give it some time to start first
-  curl -s localhost:$PORT &> $LOG \
+  curl -s localhost:$PORT 2>&1 >> $LOG \
     || abort "Server not responding. `cat "$REF_DIR.log"`"
 }
 
@@ -115,13 +115,13 @@ reroute ()
       > "$APP_DIR/server.conf"
 
     # reload the router
-    sudo /usr/sbin/service nginx reload > $LOG
+    sudo /usr/sbin/service nginx reload 2>&1 >> $LOG
   fi
 
   if [[ "$REDEPLOY" != "1" ]]; then
     # stop any previous apps in .current (should never be more than one)
     for ref in `cat "$APP_DIR/.current"`; do
-      sudo /sbin/stop node NAME=$APP REF=$ref &> $LOG
+      sudo /sbin/stop node NAME=$APP REF=$ref 2>&1 >> $LOG
     done
 
     # lastly add this app to .current
