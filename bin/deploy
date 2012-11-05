@@ -32,6 +32,9 @@ abort ()
   echo
   echo " !     $@" 1>&2
   echo
+  # only abort once
+  if [[ "$ABORTED" == "1" ]]; then return; fi
+  ABORTED=1
   test $REDEPLOY || cleanup
   exit 1;
 }
